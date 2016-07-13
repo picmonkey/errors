@@ -183,7 +183,7 @@ func (err *Error) Stack() []byte {
 // ErrorStack returns a string that contains both the
 // error message and the callstack.
 func (err *Error) ErrorStack() string {
-	return err.TypeName() + " " + err.Error() + "\n" + string(err.Stack())
+	return err.TypeName() + ": " + err.Error() + "\n\ngoroutine 1 [running]:\n" + string(err.Stack())
 }
 
 // StackFrames returns an array of frames containing information about the
