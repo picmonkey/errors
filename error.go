@@ -207,3 +207,26 @@ func (err *Error) TypeName() string {
 	}
 	return reflect.TypeOf(err.Err).String()
 }
+
+// Unwrap returns the underlying error
+func (err *Error) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+	return err.Err
+}
+
+type unwrapper interface {
+	Unwrap() error
+}
+
+// Unwrap returns the underlying error if the argument supports Unwrap() error
+func Unwrap(err error) error {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(unwrapper); ok {
+		return e.Unwrap()
+	}
+	return err
+}
