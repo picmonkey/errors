@@ -16,16 +16,21 @@ func TestStackFormatMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		bs := [][]byte{Errorf("hi").Stack(), debug.Stack()}
+		e, s := Errorf("hi"), debug.Stack()
+		bs := [][]byte{e.Stack(), s}
 
-		// Ignore the first line (as it contains the PC of the .Stack() call)
-		bs[0] = bytes.SplitN(bs[0], []byte("\n"), 2)[1]
-		bs[1] = bytes.SplitN(bs[1], []byte("\n"), 2)[1]
+		// Grab the second line in the trace, which is the line above with Errorf on it
+		//bs[0] = bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0]
+		// Ignore the debug.Stack() and runtime.Stack() calls
+		//bs[1] = bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 6)[4], []byte("+"), 2)[0]
+		bs[0] = bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0]
+		// Ignore the debug.Stack() and runtime.Stack() calls
+		bs[1] = bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 6)[4], []byte("+"), 2)[0]
 
 		if bytes.Compare(bs[0], bs[1]) != 0 {
 			t.Errorf("Stack didn't match")
-			t.Errorf("%s", bs[0])
-			t.Errorf("%s", bs[1])
+			t.Errorf("bs0=%s", bs[0])
+			t.Errorf("bs1=%s", bs[1])
 		}
 	}()
 
@@ -42,13 +47,13 @@ func TestSkipWorks(t *testing.T) {
 
 		bs := [][]byte{Wrap("hi", 2).Stack(), debug.Stack()}
 
-		// should skip four lines of debug.Stack()
-		bs[1] = bytes.SplitN(bs[1], []byte("\n"), 5)[4]
+		bs[0] = bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0]
+		bs[1] = bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 8)[6], []byte("+"), 2)[0]
 
 		if bytes.Compare(bs[0], bs[1]) != 0 {
 			t.Errorf("Stack didn't match")
-			t.Errorf("%s", bs[0])
-			t.Errorf("%s", bs[1])
+			t.Errorf("bs0=%s", bs[0])
+			t.Errorf("bs1=%s", bs[1])
 		}
 	}()
 
@@ -71,18 +76,18 @@ func TestNew(t *testing.T) {
 
 	bs := [][]byte{New("foo").Stack(), debug.Stack()}
 
-	// Ignore the first line (as it contains the PC of the .Stack() call)
-	bs[0] = bytes.SplitN(bs[0], []byte("\n"), 2)[1]
-	bs[1] = bytes.SplitN(bs[1], []byte("\n"), 2)[1]
+	bs[0] = bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0]
+	bs[1] = bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 6)[4], []byte("+"), 2)[0]
 
 	if bytes.Compare(bs[0], bs[1]) != 0 {
 		t.Errorf("Stack didn't match")
-		t.Errorf("%s", bs[0])
-		t.Errorf("%s", bs[1])
+		t.Errorf("bs0=%s", bs[0])
+		t.Errorf("bs1=%s", bs[1])
 	}
 
-	if err.ErrorStack() != err.TypeName()+" "+err.Error()+"\n"+string(err.Stack()) {
+	if err.ErrorStack() != err.TypeName()+": "+err.Error()+"\n\ngoroutine 1 [running]:\n"+string(err.Stack()) {
 		t.Errorf("ErrorStack is in the wrong format")
+		t.Errorf("es=%s", err.ErrorStack())
 	}
 }
 

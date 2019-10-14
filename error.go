@@ -183,7 +183,7 @@ func (err *Error) Stack() []byte {
 // ErrorStack returns a string that contains both the
 // error message and the callstack.
 func (err *Error) ErrorStack() string {
-	return err.TypeName() + " " + err.Error() + "\n" + string(err.Stack())
+	return err.TypeName() + ": " + err.Error() + "\n\ngoroutine 1 [running]:\n" + string(err.Stack())
 }
 
 // StackFrames returns an array of frames containing information about the
@@ -206,4 +206,28 @@ func (err *Error) TypeName() string {
 		return "panic"
 	}
 	return reflect.TypeOf(err.Err).String()
+}
+
+// Unwrap returns the underlying error
+func (err *Error) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+	return err.Err
+}
+
+
+type unwrapper interface {
+	Unwrap() error
+}
+
+// Unwrap returns the underlying error if the argument supports Unwrap() error
+func Unwrap(err error) error {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(unwrapper); ok {
+		return e.Unwrap()
+	}
+	return err
 }

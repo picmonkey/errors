@@ -1,9 +1,7 @@
 package errors
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"runtime"
 	"strings"
 )
@@ -50,30 +48,7 @@ func (frame *StackFrame) Func() *runtime.Func {
 // String returns the stackframe formatted in the same way as go does
 // in runtime/debug.Stack()
 func (frame *StackFrame) String() string {
-	str := fmt.Sprintf("%s:%d (0x%x)\n", frame.File, frame.LineNumber, frame.ProgramCounter)
-
-	source, err := frame.SourceLine()
-	if err != nil {
-		return str
-	}
-
-	return str + fmt.Sprintf("\t%s: %s\n", frame.Name, source)
-}
-
-// SourceLine gets the line of code (from File and Line) of the original source if possible.
-func (frame *StackFrame) SourceLine() (string, error) {
-	data, err := ioutil.ReadFile(frame.File)
-
-	if err != nil {
-		return "", New(err)
-	}
-
-	lines := bytes.Split(data, []byte{'\n'})
-	if frame.LineNumber <= 0 || frame.LineNumber >= len(lines) {
-		return "???", nil
-	}
-	// -1 because line-numbers are 1 based, but our array is 0 based
-	return string(bytes.Trim(lines[frame.LineNumber-1], " \t")), nil
+	return fmt.Sprintf("%s.%s()\n\t%s:%d +0x%x\n", frame.Package, frame.Name, frame.File, frame.LineNumber, frame.ProgramCounter)
 }
 
 func packageAndName(fn *runtime.Func) (string, string) {
