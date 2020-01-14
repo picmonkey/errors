@@ -130,26 +130,6 @@ func WrapPrefix(e interface{}, prefix string, skip int) *Error {
 
 }
 
-// Is detects whether the error is equal to a given error. Errors
-// are considered equal by this function if they are the same object,
-// or if they both contain the same error inside an errors.Error.
-func Is(e error, original error) bool {
-
-	if e == original {
-		return true
-	}
-
-	if e, ok := e.(*Error); ok {
-		return Is(e.Err, original)
-	}
-
-	if original, ok := original.(*Error); ok {
-		return Is(e, original.Err)
-	}
-
-	return false
-}
-
 // Errorf creates a new error with the given message. You can use it
 // as a drop-in replacement for fmt.Errorf() to provide descriptive
 // errors in return values.
@@ -216,18 +196,27 @@ func (err *Error) Unwrap() error {
 	return err.Err
 }
 
+// Is detects whether the error is equal to a given error. Errors
+// are considered equal by this function if they are the same object,
+// or if they both contain the same error inside an errors.Error.
+func (err *Error) Is(original error) bool {
+	if err == original {
+		return true
+	}
 
-type unwrapper interface {
-	Unwrap() error
+	if err != nil && err.Err == original {
+		return true
+	}
+	if original, ok := original.(*Error); ok {
+		return original.Is(err.Err)
+	}
+
+	return false
 }
 
-// Unwrap returns the underlying error if the argument supports Unwrap() error
-func Unwrap(err error) error {
-	if err == nil {
-		return nil
-	}
-	if e, ok := err.(unwrapper); ok {
-		return e.Unwrap()
-	}
-	return err
+// Is detects whether the error is equal to a given error. Errors
+// are considered equal by this function if they are the same object,
+// or if they both contain the same error inside an errors.Error.
+func Is(e error, original error) bool {
+	return is(e, original) || is(original, e)
 }

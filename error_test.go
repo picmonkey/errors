@@ -47,8 +47,8 @@ func TestSkipWorks(t *testing.T) {
 
 		bs := [][]byte{Wrap("hi", 2).Stack(), debug.Stack()}
 
-		bs[0] = bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0]
-		bs[1] = bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 8)[6], []byte("+"), 2)[0]
+		bs[0] = bytes.TrimRight(bytes.SplitN(bytes.SplitN(bs[0], []byte("\n"), 3)[1], []byte("+"), 2)[0], " ")
+		bs[1] = bytes.TrimRight(bytes.SplitN(bytes.SplitN(bs[1], []byte("\n"), 10)[8], []byte("+"), 2)[0], " ")
 
 		if bytes.Compare(bs[0], bs[1]) != 0 {
 			t.Errorf("Stack didn't match")
@@ -165,6 +165,23 @@ func TestWrapPrefixError(t *testing.T) {
 	}
 }
 
+type errType string
+
+func (e errType) Error() string {
+	return string(e)
+}
+
+func TestAs(t *testing.T) {
+	original := errType("hi")
+	var e errType
+	if !As(New(original), &e) {
+		t.Error("As failed to convert to errType")
+	}
+	if e != original {
+		t.Error("As did not return original error")
+	}
+}
+
 func ExampleErrorf(x int) (int, error) {
 	if x%2 == 1 {
 		return 0, Errorf("can only halve even numbers, got %d", x)
@@ -172,9 +189,9 @@ func ExampleErrorf(x int) (int, error) {
 	return x / 2, nil
 }
 
-func ExampleWrapError() (error, error) {
+func ExampleWrapError() (int, error) {
 	// Wrap io.EOF with the current stack-trace and return it
-	return nil, Wrap(io.EOF, 0)
+	return 0, Wrap(io.EOF, 0)
 }
 
 func ExampleWrapError_skip() {
