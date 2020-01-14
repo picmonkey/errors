@@ -165,6 +165,23 @@ func TestWrapPrefixError(t *testing.T) {
 	}
 }
 
+type errType string
+
+func (e errType) Error() string {
+	return string(e)
+}
+
+func TestAs(t *testing.T) {
+	original := errType("hi")
+	var e errType
+	if !As(New(original), &e) {
+		t.Error("As failed to convert to errType")
+	}
+	if e != original {
+		t.Error("As did not return original error")
+	}
+}
+
 func ExampleErrorf(x int) (int, error) {
 	if x%2 == 1 {
 		return 0, Errorf("can only halve even numbers, got %d", x)
